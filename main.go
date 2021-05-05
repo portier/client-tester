@@ -12,6 +12,7 @@ import (
 
 func main() {
 	bin := flag.String("bin", "", "executable that runs the client")
+	debug := flag.Bool("debug", false, "log all communication")
 	flag.Parse()
 	if *bin == "" {
 		log.Fatal("-bin is required")
@@ -20,6 +21,7 @@ func main() {
 	initSigner()
 	initServer(sgn.keySet)
 	initSubprocess(*bin, srv.origin)
+	proc.debug = *debug
 
 	var clientID string
 

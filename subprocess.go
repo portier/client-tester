@@ -14,6 +14,7 @@ type subprocess struct {
 	cmd    *exec.Cmd
 	stdin  *os.File
 	stdout *bufio.Scanner
+	debug  bool
 }
 
 func initSubprocess(bin string, broker string) {
@@ -45,7 +46,11 @@ func initSubprocess(bin string, broker string) {
 }
 
 func (proc *subprocess) writeLine(cmd ...string) {
-	_, err := proc.stdin.WriteString(strings.Join(cmd, "\t") + "\n")
+	line := strings.Join(cmd, "\t")
+	if proc.debug {
+		log.Print(">> " + line)
+	}
+	_, err := proc.stdin.WriteString(line + "\n")
 	if err != nil {
 		log.Fatal("subprocess stdin error", err)
 	}
@@ -55,7 +60,11 @@ func (proc *subprocess) readLine() []string {
 	if !proc.stdout.Scan() {
 		log.Fatal("subprocess stdout error", proc.stdout.Err())
 	}
-	return strings.Split(proc.stdout.Text(), "\t")
+	line := proc.stdout.Text()
+	if proc.debug {
+		log.Print("<< " + line)
+	}
+	return strings.Split(line, "\t")
 }
 
 func (proc *subprocess) expect(res, descr string) string {
