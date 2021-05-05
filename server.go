@@ -29,6 +29,7 @@ func initServer(keys jwk.Set) {
 	var origin string
 
 	http.HandleFunc("/.well-known/openid-configuration", func(rw http.ResponseWriter, r *http.Request) {
+		srv.numConfigRequests++
 		body, err := json.Marshal(&discoveryDoc{
 			JWKsURI:               fmt.Sprintf("%s/test-keys", origin),
 			AuthorizationEndpoint: authEndpoint,
@@ -40,6 +41,7 @@ func initServer(keys jwk.Set) {
 	})
 
 	http.HandleFunc("/test-keys", func(rw http.ResponseWriter, r *http.Request) {
+		srv.numKeysRequests++
 		body, err := json.Marshal(keys)
 		if err != nil {
 			log.Fatal("json.Marshal error:", err)

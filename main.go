@@ -295,6 +295,11 @@ func main() {
 		}
 	})
 
+	test("caching", func() {
+		assertEq(srv.numConfigRequests, 1, "discovery requested just once")
+		assertEq(srv.numKeysRequests, 1, "keys requested just once")
+	})
+
 	proc.stop()
 	if !allOk {
 		os.Exit(1)
