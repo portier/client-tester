@@ -18,6 +18,7 @@ func main() {
 		log.Fatal("-bin is required")
 	}
 
+	log.SetFlags(0)
 	initSigner()
 	initServer(sgn.keySet)
 	initSubprocess(*bin, srv.origin)
