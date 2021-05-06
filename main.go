@@ -257,6 +257,33 @@ func main() {
 		}
 	})
 
+	test("nonce reuse", func() {
+		email := "john@example.com"
+		if nonce := quickStart(email); nonce != "" {
+			now := time.Now().Unix()
+			proc.writeLine("verify", sgn.simple(&payload{
+				Iss:   srv.origin,
+				Aud:   clientID,
+				Exp:   now + 5,
+				Iat:   now,
+				Email: email,
+				Nonce: nonce,
+			}))
+			proc.expect("ok", "accepts token")
+
+			now = time.Now().Unix()
+			proc.writeLine("verify", sgn.simple(&payload{
+				Iss:   srv.origin,
+				Aud:   clientID,
+				Exp:   now + 5,
+				Iat:   now,
+				Email: email,
+				Nonce: nonce,
+			}))
+			proc.expect("err", "rejects token")
+		}
+	})
+
 	test("invalid key ID", func() {
 		email := "john@example.com"
 		if nonce := quickStart(email); nonce != "" {
