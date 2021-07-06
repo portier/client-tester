@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
 	"log"
@@ -90,8 +91,22 @@ func (sgn *signer) sign(key *rsa.PrivateKey, hdr *header, pl *payload) string {
 	plEnc := base64.RawURLEncoding.EncodeToString(plJSON)
 	signed := hdrEnc + "." + plEnc
 
-	hash := sha256.Sum256([]byte(signed))
-	sign, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, hash[:])
+	var sign []byte
+	switch hdr.Alg {
+	case "none":
+		// leave sign and err set to nil
+	case "RS256":
+		hash := sha256.Sum256([]byte(signed))
+		sign, err = rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, hash[:])
+	case "RS384":
+		hash := sha512.Sum384([]byte(signed))
+		sign, err = rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA384, hash[:])
+	case "RS512":
+		hash := sha512.Sum512([]byte(signed))
+		sign, err = rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA512, hash[:])
+	default:
+		log.Fatalf("alg '%s' not supported by signer", hdr.Alg)
+	}
 	if err != nil {
 		log.Fatal("rsa.SignPKCS1v15 error:", err)
 	}

@@ -323,6 +323,25 @@ func main() {
 		}
 	})
 
+	test("token cannot change alg from jwk", func() {
+		email := "john@example.com"
+		if nonce := quickStart(email); nonce != "" {
+			now := time.Now().Unix()
+			proc.writeLine("verify", sgn.sign(sgn.priv, &header{
+				KID: kid,
+				Alg: "RS384",
+			}, &payload{
+				Iss:   srv.origin,
+				Aud:   clientID,
+				Exp:   now + 5,
+				Iat:   now,
+				Email: email,
+				Nonce: nonce,
+			}))
+			proc.expect("err", "rejects token")
+		}
+	})
+
 	test("caching", func() {
 		assertEq(srv.numConfigRequests, 1, "discovery requested just once")
 		assertEq(srv.numKeysRequests, 1, "keys requested just once")
