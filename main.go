@@ -165,6 +165,54 @@ func main() {
 		}
 	})
 
+	test("floating point exp", func() {
+		email := "john@example.com"
+		if nonce := quickStart(email); nonce != "" {
+			now := time.Now().Unix()
+			proc.writeLine("verify", sgn.simple(&struct {
+				Iss       string  `json:"iss,omitempty"`
+				Aud       string  `json:"aud,omitempty"`
+				Exp       float64 `json:"exp,omitempty"`
+				Iat       int64   `json:"iat,omitempty"`
+				Email     string  `json:"email,omitempty"`
+				EmailOrig string  `json:"email_original,omitempty"`
+				Nonce     string  `json:"nonce,omitempty"`
+			}{
+				Iss:   srv.origin,
+				Aud:   clientID,
+				Exp:   float64(now) + 5.5,
+				Iat:   now,
+				Email: email,
+				Nonce: nonce,
+			}))
+			proc.expect("ok", "accepts token")
+		}
+	})
+
+	test("floating point iat", func() {
+		email := "john@example.com"
+		if nonce := quickStart(email); nonce != "" {
+			now := time.Now().Unix()
+			proc.writeLine("verify", sgn.simple(&struct {
+				Iss       string  `json:"iss,omitempty"`
+				Aud       string  `json:"aud,omitempty"`
+				Exp       int64   `json:"exp,omitempty"`
+				Iat       float64 `json:"iat,omitempty"`
+				Email     string  `json:"email,omitempty"`
+				EmailOrig string  `json:"email_original,omitempty"`
+				Nonce     string  `json:"nonce,omitempty"`
+			}{
+				Iss:   srv.origin,
+				Aud:   clientID,
+				Exp:   now + 5,
+				Iat:   float64(now) - 0.5,
+				Email: email,
+				Nonce: nonce,
+			}))
+			proc.expect("ok", "accepts token")
+		}
+	})
+
 	test("future issue time, but within leeway", func() {
 		email := "john@example.com"
 		if nonce := quickStart(email); nonce != "" {
