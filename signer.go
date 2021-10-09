@@ -30,16 +30,6 @@ type header struct {
 	Alg string `json:"alg,omitempty"`
 }
 
-type payload struct {
-	Iss       string `json:"iss,omitempty"`
-	Aud       string `json:"aud,omitempty"`
-	Exp       int64  `json:"exp,omitempty"`
-	Iat       int64  `json:"iat,omitempty"`
-	Email     string `json:"email,omitempty"`
-	EmailOrig string `json:"email_original,omitempty"`
-	Nonce     string `json:"nonce,omitempty"`
-}
-
 func initSigner() {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -76,7 +66,7 @@ func initSigner() {
 	}
 }
 
-func (sgn *signer) sign(key *rsa.PrivateKey, hdr *header, pl *payload) string {
+func (sgn *signer) sign(key *rsa.PrivateKey, hdr *header, pl interface{}) string {
 	hdrJSON, err := json.Marshal(hdr)
 	if err != nil {
 		log.Fatal("json.Marshal error:", err)
@@ -115,7 +105,7 @@ func (sgn *signer) sign(key *rsa.PrivateKey, hdr *header, pl *payload) string {
 	return signed + "." + signEnc
 }
 
-func (sgn *signer) simple(pl *payload) string {
+func (sgn *signer) simple(pl interface{}) string {
 	hdr := &header{
 		KID: kid,
 		Alg: alg,

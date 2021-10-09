@@ -10,6 +10,16 @@ import (
 	"time"
 )
 
+type payload struct {
+	Iss       string `json:"iss,omitempty"`
+	Aud       string `json:"aud,omitempty"`
+	Exp       int64  `json:"exp,omitempty"`
+	Iat       int64  `json:"iat,omitempty"`
+	Email     string `json:"email,omitempty"`
+	EmailOrig string `json:"email_original,omitempty"`
+	Nonce     string `json:"nonce,omitempty"`
+}
+
 func main() {
 	bin := flag.String("bin", "", "executable that runs the client")
 	debug := flag.Bool("debug", false, "log all communication")
