@@ -67,13 +67,17 @@ func (proc *subprocess) readLine() []string {
 	return strings.Split(line, "\t")
 }
 
-func (proc *subprocess) expect(res, descr string) string {
+func (proc *subprocess) expect(res, descr string) (string, string) {
 	cmd := proc.readLine()
 	if !assert(cmd[0] == res, descr) {
 		log.Print(cmd)
-		return ""
+		return "", ""
 	}
-	return cmd[1]
+	if len(cmd) >= 3 {
+		return cmd[1], cmd[2]
+	} else {
+		return cmd[1], ""
+	}
 }
 
 func (proc *subprocess) stop() {
