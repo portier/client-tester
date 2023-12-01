@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"log"
@@ -39,7 +41,14 @@ func main() {
 	test("basic auth", func() {
 		email := "john@example.com"
 
-		proc.writeLine("auth", email)
+		stateBuf := make([]uint8, 4)
+		_, err := rand.Read(stateBuf)
+		if err != nil {
+			log.Fatal("rand.Read error:", err)
+		}
+		state := hex.EncodeToString(stateBuf)
+
+		proc.writeLine("auth", email, state)
 		authURLStr := proc.expect("ok", "start authentication request")
 		if authURLStr == "" {
 			return
@@ -58,6 +67,7 @@ func main() {
 		assertEq(params.Get("login_hint"), email, "login_hint is correct")
 		assertEq(params.Get("scope"), "openid email", "scope is correct")
 		assertEq(params.Get("response_type"), "id_token", "response_type is correct")
+		assertEq(params.Get("state"), state, "state matches input")
 
 		redirectURI, err := url.Parse(params.Get("redirect_uri"))
 		if !assertOK(err, "redirect_uri is a valid URL") ||
