@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"flag"
 	"fmt"
 	"log"
@@ -20,7 +18,6 @@ type payload struct {
 	Email     string `json:"email,omitempty"`
 	EmailOrig string `json:"email_original,omitempty"`
 	Nonce     string `json:"nonce,omitempty"`
-	State     string `json:"state,omitempty"`
 }
 
 func main() {
@@ -42,15 +39,8 @@ func main() {
 	test("basic auth", func() {
 		email := "john@example.com"
 
-		stateBuf := make([]uint8, 4)
-		_, err := rand.Read(stateBuf)
-		if err != nil {
-			log.Fatal("rand.Read error:", err)
-		}
-		state := hex.EncodeToString(stateBuf)
-
-		proc.writeLine("auth", email, state)
-		authURLStr, _ := proc.expect("ok", "start authentication request")
+		proc.writeLine("auth", email)
+		authURLStr := proc.expect("ok", "start authentication request")
 		if authURLStr == "" {
 			return
 		}
@@ -68,7 +58,6 @@ func main() {
 		assertEq(params.Get("login_hint"), email, "login_hint is correct")
 		assertEq(params.Get("scope"), "openid email", "scope is correct")
 		assertEq(params.Get("response_type"), "id_token", "response_type is correct")
-		assertEq(params.Get("state"), state, "state matches input")
 
 		redirectURI, err := url.Parse(params.Get("redirect_uri"))
 		if !assertOK(err, "redirect_uri is a valid URL") ||
@@ -91,11 +80,9 @@ func main() {
 			Iat:   now,
 			Email: email,
 			Nonce: nonce,
-			State: state,
 		}))
-		verified, returnedState := proc.expect("ok", "verify token request")
+		verified := proc.expect("ok", "verify token request")
 		assertEq(verified, email, "verified email matches input")
-		assertEq(returnedState, state, "returned state matches input")
 	})
 
 	test("invalid issuer", func() {
@@ -289,7 +276,7 @@ func main() {
 				EmailOrig: email,
 				Nonce:     nonce,
 			}))
-			verified, _ := proc.expect("ok", "verify token request")
+			verified := proc.expect("ok", "verify token request")
 			assertEq(verified, normalized, "verified email is normalized input")
 		}
 	})
@@ -308,7 +295,7 @@ func main() {
 				EmailOrig: email,
 				Nonce:     nonce,
 			}))
-			verified, _ := proc.expect("ok", "verify token request")
+			verified := proc.expect("ok", "verify token request")
 			assertEq(verified, normalized, "verified email is normalized input")
 		}
 	})
