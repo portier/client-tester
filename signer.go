@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/lestrrat-go/jwx/v2/jwk"
 )
 
 const kid = "test key"
@@ -41,7 +41,7 @@ func initSigner() {
 		log.Fatal("rsa.GenerateKey error:", err)
 	}
 
-	key, err := jwk.New(priv.PublicKey)
+	key, err := jwk.FromRaw(priv.PublicKey)
 	if err != nil {
 		log.Fatal("jwk.New error:", err)
 	}
@@ -54,7 +54,7 @@ func initSigner() {
 	}
 
 	keySet := jwk.NewSet()
-	keySet.Add(key)
+	keySet.AddKey(key)
 
 	log.Print("generated server RSA key")
 

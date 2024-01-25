@@ -7,7 +7,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/lestrrat-go/jwx/v2/jwk"
 )
 
 const authEndpoint = "http://imaginary-server.test/fake-auth-route"
