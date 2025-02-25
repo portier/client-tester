@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/rsa"
 	"encoding/hex"
 	"flag"
 	"fmt"
@@ -357,9 +358,9 @@ func main() {
 		email := "john@example.com"
 		if nonce := quickStart(email); nonce != "" {
 			now := time.Now().Unix()
-			proc.writeLine("verify", sgn.sign(sgn.priv, &header{
+			proc.writeLine("verify", sgn.sign(&header{
 				KID: "bad key",
-				Alg: alg,
+				Alg: "RS256",
 			}, &payload{
 				Iss:   srv.origin,
 				Aud:   clientID,
@@ -373,12 +374,20 @@ func main() {
 	})
 
 	test("bad signature", func() {
+		fakeKey, err := rsa.GenerateKey(rand.Reader, 2048)
+		if err != nil {
+			log.Fatal("rsa.GenerateKey error:", err)
+		}
+
+		oldKey := sgn.rsaKey
+		sgn.rsaKey = fakeKey
+
 		email := "john@example.com"
 		if nonce := quickStart(email); nonce != "" {
 			now := time.Now().Unix()
-			proc.writeLine("verify", sgn.sign(sgn.fake, &header{
-				KID: kid,
-				Alg: alg,
+			proc.writeLine("verify", sgn.sign(&header{
+				KID: rsaKID,
+				Alg: "RS256",
 			}, &payload{
 				Iss:   srv.origin,
 				Aud:   clientID,
@@ -389,15 +398,17 @@ func main() {
 			}))
 			proc.expect("err", "rejects token")
 		}
+
+		sgn.rsaKey = oldKey
 	})
 
 	test("token cannot change alg from jwk", func() {
 		email := "john@example.com"
 		if nonce := quickStart(email); nonce != "" {
 			now := time.Now().Unix()
-			proc.writeLine("verify", sgn.sign(sgn.priv, &header{
-				KID: kid,
-				Alg: "RS384",
+			proc.writeLine("verify", sgn.sign(&header{
+				KID: rsaKID,
+				Alg: "RS512",
 			}, &payload{
 				Iss:   srv.origin,
 				Aud:   clientID,
@@ -410,9 +421,82 @@ func main() {
 		}
 	})
 
+	test("token cannot change alg from request start", func() {
+		email := "john@example.com"
+		if nonce := quickStart(email); nonce != "" {
+			oldAlg := sgn.alg
+			sgn.alg = "EdDSA"
+
+			now := time.Now().Unix()
+			proc.writeLine("verify", sgn.simple(&payload{
+				Iss:   srv.origin,
+				Aud:   clientID,
+				Exp:   now + 5,
+				Iat:   now,
+				Email: email,
+				Nonce: nonce,
+			}))
+			proc.expect("err", "rejects token")
+
+			sgn.alg = oldAlg
+		}
+	})
+
 	test("caching", func() {
 		assertEq(srv.numConfigRequests, 1, "discovery requested just once")
 		assertEq(srv.numKeysRequests, 1, "keys requested just once")
+	})
+
+	test("ed25519", func() {
+		oldAlg := sgn.alg
+		sgn.alg = "EdDSA"
+		proc.writeLine("clear-cache")
+		proc.expect("ok", "clears caches")
+
+		email := "john@example.com"
+		if nonce := quickStart(email); nonce != "" {
+			now := time.Now().Unix()
+			proc.writeLine("verify", sgn.simple(&payload{
+				Iss:   srv.origin,
+				Aud:   clientID + "?id_token_signed_response_alg=EdDSA",
+				Exp:   now + 5,
+				Iat:   now,
+				Email: email,
+				Nonce: nonce,
+			}))
+			proc.expect("ok", "accepts token")
+		}
+
+		sgn.alg = oldAlg
+		proc.writeLine("clear-cache")
+		proc.expect("ok", "clears caches")
+	})
+
+	test("handles changing provider config", func() {
+		email := "john@example.com"
+		if nonce := quickStart(email); nonce != "" {
+			now := time.Now().Unix()
+			token := sgn.simple(&payload{
+				Iss:   srv.origin,
+				Aud:   clientID,
+				Exp:   now + 5,
+				Iat:   now,
+				Email: email,
+				Nonce: nonce,
+			})
+
+			oldAlg := sgn.alg
+			sgn.alg = "EdDSA"
+			proc.writeLine("clear-cache")
+			proc.expect("ok", "clears caches")
+
+			proc.writeLine("verify", token)
+			proc.expect("ok", "accepts token")
+
+			sgn.alg = oldAlg
+			proc.writeLine("clear-cache")
+			proc.expect("ok", "clears caches")
+		}
 	})
 
 	proc.stop()

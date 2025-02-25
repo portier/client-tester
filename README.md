@@ -23,8 +23,9 @@ followed by a single string error description.
 Commands are:
 
 - `echo <text>`: integration replies with `ok <text>`
-- `auth <email>`: integration replies with `ok <auth URL>`
+- `auth <email> [<state>]`: integration replies with `ok <auth URL>`
 - `verify <id_token>`: integration replies with `ok <email>`
+- `clear-cache`: integration replies with `ok`
 
 Here's an example flow, where we illustrate tabs with `||`, commands from the
 test suite with `>>`, and responses from the integration with `<<`:
