@@ -73,7 +73,10 @@ func (proc *subprocess) expect(res, descr string) string {
 		log.Print(cmd)
 		return ""
 	}
-	return cmd[1]
+	if len(cmd) > 1 {
+		return cmd[1]
+	}
+	return ""
 }
 
 func (proc *subprocess) stop() {

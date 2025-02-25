@@ -15,8 +15,9 @@ const authEndpoint = "http://imaginary-server.test/fake-auth-route"
 var srv *server
 
 type discoveryDoc struct {
-	JWKsURI               string `json:"jwks_uri"`
-	AuthorizationEndpoint string `json:"authorization_endpoint"`
+	JWKsURI                          string   `json:"jwks_uri"`
+	AuthorizationEndpoint            string   `json:"authorization_endpoint"`
+	IDTokenSigningAlgValuesSupported []string `json:"id_token_signing_alg_values_supported"`
 }
 
 type server struct {
@@ -31,8 +32,9 @@ func initServer(keys jwk.Set) {
 	http.HandleFunc("/.well-known/openid-configuration", func(rw http.ResponseWriter, r *http.Request) {
 		srv.numConfigRequests++
 		body, err := json.Marshal(&discoveryDoc{
-			JWKsURI:               fmt.Sprintf("%s/test-keys", origin),
-			AuthorizationEndpoint: authEndpoint,
+			JWKsURI:                          fmt.Sprintf("%s/test-keys", origin),
+			AuthorizationEndpoint:            authEndpoint,
+			IDTokenSigningAlgValuesSupported: []string{sgn.alg},
 		})
 		if err != nil {
 			log.Fatal("json.Marshal error:", err)
